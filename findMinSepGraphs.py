@@ -217,7 +217,6 @@ def thereExistsAMinimalSeparatingEmbeddingOf(candidateGraph):
     #logger.debug('Number of rotation systems on this graph: %s ', len(rotationSystems))
     ## (2) Check whether any of them have a minimal separating embedding into a surface of genus 2.
     count = 0
-    print rotationSystems
     for rotationSystem in rotationSystems:
         if satisfiesTheorem4(rotationSystem,candidateGraph):
             if isTwoSided(rotationSystem, candidateGraph):
@@ -358,10 +357,6 @@ def generateAllRotationSystemsOn(candidateGraph):
         allPossibleRotationsAt.insert(v, rotationsUpToCyclicPermutation(incidentEdgeEnds[v]))
     ## (3) Generate all rotation systems on candidateGraph.
     listOfRotationOptions = [allPossibleRotationsAt[v] for v in range(0, candidateGraph.vcount())]
-    total = 1
-    for option in listOfRotationOptions:
-        total *= len(option)
-    print total
     #allRotationSystems = [list(rotationSystem) for rotationSystem in itertools.product(*listOfRotationOptions)]
     allRotationSystems = itertools.product(*listOfRotationOptions)
     # Return the GENERATOR.
@@ -410,6 +405,7 @@ def rotationsUpToCyclicPermutation(listOfEdgeEnds):
         R_B = [[] for n in range(0,len(P))]
         allLoopsOptimisation(R_B, P, rotationsToReturn)
         return rotationsToReturn
+        #yield rotatationsToReturn
     # NOTE: Naively, we could simply return [x for x in itertools.permutations(listOfEdgeEnds)], and everything would work fine.
     # NOTE: While that would make code-verification easier, doing so results in burdensome runtime of the overall program.
     # NOTE: As a result, this is one area where I think the speedups are worth the increased code complexity.
@@ -462,12 +458,25 @@ def rotationsUpToCyclicPermutation(listOfEdgeEnds):
                 standardRepresentative = option1
             else:
                 standardRepresentative = option2
+
             # If we haven't already stored this rotation in rotationsToReturn, then do so now.
+            # this check takes more time than it is worth
             #if not [a for (a,b) in standardRepresentative] in [[a for (a,b) in rotation] for rotation in rotationsToReturn]:
-            rotationsToReturn.append(standardRepresentative)
-            print len(rotationsToReturn)
+            if filterBadLoops(standardRepresentative):
+                rotationsToReturn.append(standardRepresentative)
+                print len(rotationsToReturn)
             #yield standardRepresentative
     return rotationsToReturn
+
+# a loop edge cannot have an odd number of edges in between its two positions in the rotation system
+def filterBadLoops(perm):
+    for edge in perm:
+        e = edge[0]
+        i = edge[1]
+        if [e, 1 - i] in perm:
+            dist = perm.index(edge) - perm.index([e, 1 - i])
+            if dist % 2 == 0: return False
+    return True
 
 def main():
     global g
@@ -480,7 +489,7 @@ def main():
     with open('g3_v2_out', 'rb') as candidate_graphs:
         matrices = pickle.load(candidate_graphs)
         ## convert from array to igraph
-        for matrix in matrices[4:]:
+        for matrix in matrices[3:]:
             row_count = 0
             edges = []
             graph = igraph.Graph(2)
@@ -496,13 +505,16 @@ def main():
                 row_count += 1
             graph.add_edges(edges)
             C_g.append(graph)
-
     # test for a known graph
     #graph = igraph.Graph(6)
     #edges = [[0,1], [0,2], [0,4], [0,5], [1,2], [1,3], [1,5], [2,3], [2,4], [3,4], [3,5], [4,5]]
     #graph.add_edges(edges)
     #C_g.append(graph)
 
+    '''
+    with open("g3_v3_out", "rb") as candidate_graphs:
+        C_g = pickle.load(candidate_graphs)
+    '''
     ## (2) Check each graph in C_g to determine whether or not it has a minimal separating embedding in a surface of genus g.
     G_g = findMinimalSeparatingGraphsIn(C_g)
     count = 0

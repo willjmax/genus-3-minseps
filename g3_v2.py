@@ -1,7 +1,7 @@
 import networkx
 import pickle
 
-### the intent of this program is to generate a list of 2-vertex candidate graphs which can minimally separate a genus 3 surface:w
+### the intent of this program is to generate a list of 2-vertex candidate graphs which can minimally separate a genus 3 surface
 
 def to_networkx(matrix):
     x_graph = networkx.Multigraph()
